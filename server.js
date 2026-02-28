@@ -8,7 +8,7 @@ app.use(express.json());
 app.use(express.static("public"));
 
 const GEMINI_KEY = process.env.GEMINI_KEY;
-
+app.get('/',(req, res) =>{res.sendFile(path.join(__dirname, 'public', 'index.html'))});
 
 app.post("/chat", async (req, res) =>
 {
