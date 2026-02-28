@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Studoo</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+addDoc,
+onSnapshot,
+query,
+orderBy
+}
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+
+const firebaseConfig = {
+apiKey: "PASTE YOUR KEY",
+authDomain: "PASTE",
+projectId: "PASTE",
+storageBucket: "PASTE",
+messagingSenderId: "PASTE",
+appId: "PASTE"
+};
+
+
+const app = initializeApp(firebaseConfig);
+
+const db = getFirestore(app);
+
+const notesRef = collection(db,"notes");
+
+
+// SAVE NOTE
+window.saveNote = async function()
+{
+const username =
+document.getElementById("username").value;
+
+const text =
+document.getElementById("note-input").value;
+
+if(username=="" || text=="")
+{
+alert("Enter name and note");
+return;
+}
+
+await addDoc(notesRef,{
+user: username,
+text: text,
+time: Date.now()
+});
+
+document.getElementById("note-input").value="";
+}
+
+
+// DISPLAY NOTES (REALTIME)
+const q = query(notesRef, orderBy("time","desc"));
+
+onSnapshot(q,(snapshot)=>
+{
+const list =
+document.getElementById("notes-list");
+
+list.innerHTML="";
+
+snapshot.forEach(doc=>
+{
+const note = doc.data();
+
+list.innerHTML += `
+<div class="note-item">
+<div class="note-user">${note.user}</div>
+<div>${note.text}</div>
+</div>
+`;
+});
+
+});
+
+</script>
+<body>
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+      <h1>Studoo</h1>
+      <p class="login-subtitle">Log in to start focused study sessions.</p>
+      <input id="login-name" type="text" placeholder="Your name">
+      <button id="login-btn">Continue</button>
+    </div>
+  </div>
+
+  <!-- MAIN APP (only ONE app-root!) -->
+  <div id="app-root" class="app" style="display:none;">
+    <h1>Studoo</h1>
+
+    <div class="layout">
+      <!-- LEFT COLUMN: TIMER -->
+      <div class="left-column panel">
+        <div class="timer-header">
+          <button class="mode-btn active" data-mode="focus">Focus 25</button>
+          <button class="mode-btn" data-mode="short">Short 5</button>
+          <button class="mode-btn" data-mode="long">Long 15</button>
+          <button class="mode-btn" data-mode="deep">Deep 50</button>
+        </div>
+
+        <div class="micro-session">
+          <button id="micro-session-btn">
+            I don’t feel like studying (5‑min start)
+          </button>
+        </div>
+
+        <div class="timer-ring">
+          <div id="time">25:00</div>
+        </div>
+
+        <div class="controls">
+          <button id="start">Start</button>
+          <button id="pause">Pause</button>
+          <button id="reset">Reset</button>
+        </div>
+
+        <div class="session-dots" id="session-dots"></div>
+
+        <div class="break-overlay" id="break-overlay">
+          <div class="break-message">
+            <h3>Session complete 🎉</h3>
+            <p>Time for a break.</p>
+            <button id="overlay-close">OK</button>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- RIGHT COLUMN -->
+      <div class="right-column">
+        <section class="card">
+          <h2>Tasks</h2>
+          <div class="task-input-row">
+            <input id="task-input" type="text" placeholder="Add a task...">
+            <button id="add-task">Add</button>
+          </div>
+          <ul id="task-list"></ul>
+
+          <div class="plan-section">
+            <h2>Today’s Plan</h2>
+            <div class="plan-controls">
+              <input id="available-min" type="number" min="25" step="25"
+                     placeholder="Available minutes today">
+              <button id="plan-day-btn">Plan my day</button>
+            </div>
+            <ul id="plan-list"></ul>
+          </div>
+
+          <div class="current-block">
+            <h3>Current block</h3>
+            <p id="current-block-text">No block selected.</p>
+            <button id="next-block-btn">Start next block</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Progress</h2>
+          <div class="habit-stats">
+            <div class="stat-card">
+              <span class="stat-label">XP</span>
+              <span class="stat-value" id="xp-value">0</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Day streak</span>
+              <span class="stat-value" id="streak-value">0</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Blocks today</span>
+              <span class="stat-value" id="sessions-today">0</span>
+            </div>
+          </div>
+          <section class="card">
+  <h2>Recent focus blocks</h2>
+  <ul id="session-log-list" class="session-log-list"></ul>
+</section>
+
+        </section>
+
+        <section class="card">
+          <h2>AI Study Helper</h2>
+  <section class="card">
+  <h2>AI Study Helper</h2>
+
+  <div id="ai-chat-window" class="ai-chat-window">
+    <div class="ai-message bot">
+      Hi! I'm Studoo AI. Ask me anything about your studies 📚
+    </div>
+  </div>
+
+  <div class="ai-input-row">
+    <input
+      type="text"
+      id="ai-input"
+      placeholder="Ask a question..."
+    >
+
+    <button onclick="askAI()">Ask</button>
+  </div>
+
+</section
+<div class="ai-input-row">
+<input type="text" id="ai-input" placeholder="Ask a doubt or request summary...">
+
+<button onclick="askAI()">Ask</button>
+</div>
+
+</div>
+          
+
+        <section class="card room-section">
+          <h2>Study room</h2>
+          <div class="room-join-row">
+  <input id="room-code-input" placeholder="Room code (e.g. signals-101)" />
+  <button id="create-room-btn">Create</button>
+  <button id="join-room-btn">Join</button>
+</div>
+<p class="room-status-text" id="room-status-text">Not in a room.</p>
+<ul id="room-members-list" class="room-members-list"></ul>
+
+          <div class="room-options">
+  <label class="sync-row">
+    <input type="checkbox" id="sync-timer-toggle">
+    <span>Sync timer with room</span>
+  </label>
+
+  <div class="subject-row">
+    <label for="subject-part">I’m focusing on</label>
+    <select id="subject-part">
+      <option value="">Select topic…</option>
+      <option value="notes">Note‑making</option>
+      <option value="mcq">MCQs / practice</option>
+      <option value="revise">Revision</option>
+      <option value="project">Project work</option>
+    </select>
+  </div>
+</div>
+
+
+<ul id="room-members"></ul>
+          
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div id="idle-banner">
+    <span id="idle-text">
+      You’ve been idle for a while. Start a 5‑minute micro session?
+    </span>
+    <button id="idle-start-btn">Start 5 min</button>
+  </div>
+  <!-- Focus music -->
+<section class="card music-player">
+  <h2>Focus music</h2>
+ 
+</section>
+<div class="card notes-card">
+<select id="music-select">
+  <option value="lofi">Lo-fi</option>
+  <option value="deep">Deep focus</option>
+  <option value="jazz">Jazz</option>
+</select>
+
+<iframe id="spotify-player"
+  width="100%"
+  height="352"
+  frameborder="0"
+  allow="autoplay; encrypted-media">
+</iframe>
+<h3>🌍 Shared Study Notes</h3>
+
+<input type="text" id="username" placeholder="Your name">
+
+<textarea id="note-input" placeholder="Write and share notes with others..."></textarea>
+
+<button onclick="saveNote()" class="save-btn">Share Note</button>
+
+<div id="notes-list"></div>
+
+</div>
+  <script src="script.js"></script>
+</body>
+</html>
